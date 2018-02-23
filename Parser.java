@@ -1,7 +1,10 @@
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.PrintWriter;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.Scanner;
 
 /**
@@ -83,6 +86,9 @@ public class Parser {
                         if(myBooks.size() == 5000) {
                             save();
                             System.out.println("5000 Books Processed");
+                            DateFormat dateFormat = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
+                            Date date = new Date();
+                            System.out.println(dateFormat.format(date)); //2016/11/16 12:08:43
                             myBooks.clear();
                         }
                         myBooks.add(new Book(author, bookName, content.toString()));
@@ -117,6 +123,7 @@ public class Parser {
                 failedBooks.add(book);
             }
         }
+
 
     }
 }
