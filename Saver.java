@@ -17,23 +17,24 @@ public class Saver implements Runnable {
         this.books = books;
         this.destination = destination;
     }
+    public void setBooks(ArrayList<Book> books){
+        this.books = books;
+    }
     public void run(){
-        System.out.println("Saving");
         for(Book book : books){
             String author = book.getAuthor();
             String title = book.getName();
             String content = book.getContent();
             File newFile = new File(destination + files_processed + ".txt");
-            files_processed++;
             try {
                 if(!newFile.exists()) {
+                    files_processed++;
                     PrintWriter output = new PrintWriter(newFile);
                     output.append("Author: " + author + "\n");
                     output.append("Title: " + title + "\n");
                     output.append(content);
                     output.close();
                     books.remove(book);
-                    System.out.println("File " + newFile.getName() + " created");
                 }
                 else{
                     while(newFile.exists()){
@@ -45,13 +46,12 @@ public class Saver implements Runnable {
                     output.append("Title: " + title + "\n");
                     output.append(content);
                     output.close();
-                    books.remove(book);
-                    System.out.println("File " + newFile.getName() + " created");
                 }
             }
             catch(FileNotFoundException e){
                 failedBooks.add(book);
             }
         }
+        books.clear();
     }
 }

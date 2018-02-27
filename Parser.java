@@ -66,11 +66,10 @@ public class Parser implements Runnable {
                         temp = myScanner.next();
                     }
                     if(content.length() != 0) {
-                        if(books.size() == 1000) {
-                            new Thread(saver, "saver").run();
-                            date = new Date();
-                            System.out.println(dateFormat.format(date)); //2016/11/16 12:08:43
+                        if(books.size() == 2500) {
+                            saver.setBooks(books);
                             books = new ArrayList<>();
+                            new Thread(saver, "saver").run();
                         }
                         books.add(new Book(author, bookName, content.toString()));
                     }
@@ -84,5 +83,7 @@ public class Parser implements Runnable {
                 e.printStackTrace();
             }
         }
+        date = new Date();
+        System.out.println( Thread.currentThread().getName()+" finished " + dateFormat.format(date)); //2016/11/16 12:08:43
     }
 }
