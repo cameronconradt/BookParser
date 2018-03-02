@@ -4,6 +4,7 @@ import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.InputMismatchException;
 import java.util.Scanner;
 
 /**
@@ -13,6 +14,7 @@ import java.util.Scanner;
 public class Parser implements Runnable {
     ArrayList<File> files;
     ArrayList<Book> books = new ArrayList<>();
+    ArrayList<File> failed_files = new ArrayList<>();
     Saver saver;
     public Parser( ArrayList<File> Files, String destination){
         this.files = Files;
@@ -20,10 +22,9 @@ public class Parser implements Runnable {
     }
 
     public void run(){
-        System.out.println("Parsing");
         DateFormat dateFormat = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
         Date date = new Date();
-        System.out.println(dateFormat.format(date)); //2016/11/16 12:08:43
+        System.out.println(Thread.currentThread().getName()+ "started" +dateFormat.format(date)); //2016/11/16 12:08:43
         if(files.size() <= 0){
             throw new IllegalArgumentException("No Files to Parse");
         }
@@ -37,41 +38,66 @@ public class Parser implements Runnable {
                     while (bookName == null && myScanner.hasNext()) {
                         temp = myScanner.next();
                         if (temp.equals("Title:")) {
+                            if(!myScanner.hasNext()){
+                                throw new InputMismatchException("Failed after Title");
+                            }
                             bookName = myScanner.next();
                             temp = myScanner.next();
                             while (temp.indexOf(':') == -1 && !temp.equals("Release")) {
+                                if(!myScanner.hasNext()){
+                                    throw new InputMismatchException("Failed Loading Title");
+                                }
                                 bookName += " " + temp;
                                 temp = myScanner.next();
                             }
                             if (temp.equals("Author:")) {
+                                if(!myScanner.hasNext()){
+                                    throw new InputMismatchException("Failed after Author");
+                                }
                                 author = myScanner.next();
                                 temp = myScanner.next();
                                 while (temp.indexOf(':') == -1 && !temp.equals("Release")) {
+                                    if(!myScanner.hasNext()){
+                                        throw new InputMismatchException("Failed loading Author");
+                                    }
                                     author += " " + temp;
-                                    temp = myScanner.next();
+                                    if(myScanner.hasNextLine())
+                                        temp = myScanner.nextLine();
+                                    else
+                                        throw new InputMismatchException("Failed after loading Author");
                                 }
                             }
                         }
                     }
-                    for(int i = 0; i < 2 && myScanner.hasNext();i++){
-                        while (!temp.equals("***") && myScanner.hasNext()) {
-                            temp = myScanner.next();
-                        }
-                        if(myScanner.hasNext())
-                            temp = myScanner.next();
+                    while ((!temp.contains("START"))&& myScanner.hasNextLine()) {
+                        temp = myScanner.nextLine();
+                    }
+                    if(myScanner.hasNextLine())
+                        temp = myScanner.nextLine();
+                    while(temp.contains("***") && myScanner.hasNextLine()){
+                        temp = myScanner.nextLine();
+                    }
+                    if(myScanner.hasNext())
+                        temp = myScanner.nextLine();
+                    else{
+                        throw new InputMismatchException("Failed loading content");
                     }
                     StringBuffer content = new StringBuffer();
-                    while (!temp.equals("***") && myScanner.hasNext()) {
-                        content.append(temp + " ");
-                        temp = myScanner.next();
+                    while (!temp.contains("END OF") && myScanner.hasNextLine()) {
+                        content.append(temp + "\n");
+                        temp = myScanner.nextLine();
                     }
                     if(content.length() != 0) {
-                        if(books.size() == 2500) {
+                        if(books.size() == 1200) {
                             saver.setBooks(books);
                             books = new ArrayList<>();
                             new Thread(saver, "saver").run();
                         }
                         books.add(new Book(author, bookName, content.toString()));
+                    }
+                    else{
+                        failed_files.add(file);
+                        throw new InputMismatchException("content empty");
                     }
                 }
             }
@@ -79,11 +105,16 @@ public class Parser implements Runnable {
                 System.out.println("File Not Found");
             }
             catch(Exception e){
+                failed_files.add(file);
+                System.out.println(Thread.currentThread().getName());
                 System.out.println(file.getName());
-                e.printStackTrace();
+                System.out.println(e.getMessage());
             }
         }
+        saver.setBooks(books);
+        new Thread(saver, Thread.currentThread().getName() + "'s saver").run();
         date = new Date();
         System.out.println( Thread.currentThread().getName()+" finished " + dateFormat.format(date)); //2016/11/16 12:08:43
+        System.out.println("Failed Files :" + failed_files.size());
     }
 }
